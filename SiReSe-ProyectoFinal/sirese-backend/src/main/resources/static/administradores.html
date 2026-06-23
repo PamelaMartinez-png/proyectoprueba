@@ -1,0 +1,319 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SiReSe – Administradores</title>
+  <!-- Mismos CSS que el resto del proyecto -->
+  <link rel="stylesheet" href="assets/css/bootstrap.min.css">
+  <link rel="stylesheet" href="assets/vendors/bootstrap-icons/bootstrap-icons.css">
+  <link rel="stylesheet" href="assets/css/style.css">
+</head>
+<body>
+
+<!-- El sidebar/navbar se inyecta igual que en las otras páginas -->
+<div id="app">
+  <div class="sidebar" id="sidebar"></div>
+
+  <div class="main-content">
+    <div id="topbar"></div>
+
+    <div class="page-content">
+      <div class="page-header d-flex justify-content-between align-items-center mb-4">
+        <div>
+          <h1 class="page-title">Administradores</h1>
+          <p class="text-muted mb-0">Gestión de cuentas con acceso al panel.</p>
+        </div>
+        <button class="btn btn-primary" onclick="abrirModalAlta()">
+          <i class="bi bi-person-plus-fill me-2"></i>Nuevo Administrador
+        </button>
+      </div>
+
+      <!-- Alerta global -->
+      <div id="alerta" class="alert d-none mb-3" role="alert"></div>
+
+      <!-- Tabla -->
+      <div class="card">
+        <div class="card-body p-0">
+          <table class="table table-hover mb-0" id="tablaAdmins">
+            <thead class="table-dark">
+              <tr>
+                <th>ID</th>
+                <th>Usuario</th>
+                <th>Nombre completo</th>
+                <th>Email (notificaciones)</th>
+                <th class="text-center">Acciones</th>
+              </tr>
+            </thead>
+            <tbody id="cuerpoAdmins">
+              <tr>
+                <td colspan="5" class="text-center py-4 text-muted">
+                  <div class="spinner-border spinner-border-sm me-2"></div>Cargando...
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+    </div><!-- /page-content -->
+  </div><!-- /main-content -->
+</div><!-- /app -->
+
+<!-- ═══════════════════════════════════════════════════════
+     MODAL — Alta / Edición
+═══════════════════════════════════════════════════════ -->
+<div class="modal fade" id="modalAdmin" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
+
+      <div class="modal-header">
+        <h5 class="modal-title" id="modalTitulo">Nuevo Administrador</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+
+      <div class="modal-body">
+        <input type="hidden" id="admin-id">
+
+        <div class="mb-3">
+          <label class="form-label fw-semibold">
+            Usuario <span class="text-danger">*</span>
+          </label>
+          <input type="text" class="form-control" id="admin-usuario"
+                 placeholder="Ej. jperez" autocomplete="off">
+        </div>
+
+        <div class="mb-3">
+          <label class="form-label fw-semibold">
+            Nombre completo <span class="text-danger">*</span>
+          </label>
+          <input type="text" class="form-control" id="admin-nombre"
+                 placeholder="Ej. Juan Pérez López">
+        </div>
+
+        <div class="mb-3">
+          <label class="form-label fw-semibold">
+            Email <span class="text-danger">*</span>
+            <small class="text-muted fw-normal">
+              — aquí llegan las notificaciones de nuevos aspirantes
+            </small>
+          </label>
+          <input type="email" class="form-control" id="admin-email"
+                 placeholder="Ej. jperez@upiiz.ipn.mx">
+        </div>
+
+        <div class="mb-3">
+          <label class="form-label fw-semibold" id="lblContrasena">
+            Contraseña <span class="text-danger">*</span>
+          </label>
+          <div class="input-group">
+            <input type="password" class="form-control" id="admin-contrasena"
+                   placeholder="Mínimo 6 caracteres" autocomplete="new-password">
+            <button class="btn btn-outline-secondary" type="button"
+                    onclick="togglePass()">
+              <i class="bi bi-eye" id="iconoOjo"></i>
+            </button>
+          </div>
+          <div id="infoContrasena" class="form-text text-muted d-none">
+            Deja en blanco para no cambiar la contraseña.
+          </div>
+        </div>
+      </div>
+
+      <div class="modal-footer">
+        <button class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+        <button class="btn btn-primary" id="btnGuardar" onclick="guardarAdmin()">
+          <i class="bi bi-floppy me-1"></i>Guardar
+        </button>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════
+     MODAL — Confirmar eliminación
+═══════════════════════════════════════════════════════ -->
+<div class="modal fade" id="modalEliminar" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-sm">
+    <div class="modal-content">
+      <div class="modal-header bg-danger text-white">
+        <h5 class="modal-title">Confirmar baja</h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body">
+        ¿Eliminar al administrador <strong id="nombreEliminar"></strong>?
+        Esta acción no se puede deshacer.
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Cancelar</button>
+        <button class="btn btn-danger btn-sm" onclick="confirmarEliminar()">
+          <i class="bi bi-trash me-1"></i>Eliminar
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Scripts — mismo orden que las otras páginas -->
+<script src="assets/js/bootstrap.bundle.min.js"></script>
+<script src="js/sirese-layout.js"></script>
+<script>
+  const API = '/api/administradores';
+  let idEliminar = null;
+  const modalAdmin    = new bootstrap.Modal(document.getElementById('modalAdmin'));
+  const modalEliminar = new bootstrap.Modal(document.getElementById('modalEliminar'));
+
+  // ── Cargar tabla ───────────────────────────────────────
+  function cargarAdmins() {
+    fetch(API)
+      .then(r => r.json())
+      .then(data => {
+        if (!data.length) {
+          document.getElementById('cuerpoAdmins').innerHTML =
+            `<tr><td colspan="5" class="text-center text-muted py-4">
+               No hay administradores registrados.
+             </td></tr>`;
+          return;
+        }
+        document.getElementById('cuerpoAdmins').innerHTML = data.map(a => `
+          <tr>
+            <td>${a.id}</td>
+            <td><code>${a.usuario}</code></td>
+            <td>${a.nombreCompleto}</td>
+            <td>
+              <i class="bi bi-envelope me-1 text-muted"></i>${a.email || '—'}
+            </td>
+            <td class="text-center">
+              <button class="btn btn-sm btn-outline-primary me-1"
+                      onclick="abrirModalEdicion(${a.id})"
+                      title="Editar">
+                <i class="bi bi-pencil"></i>
+              </button>
+              <button class="btn btn-sm btn-outline-danger"
+                      onclick="abrirModalEliminar(${a.id}, '${esc(a.nombreCompleto)}')"
+                      title="Eliminar">
+                <i class="bi bi-trash"></i>
+              </button>
+            </td>
+          </tr>`).join('');
+      })
+      .catch(() => mostrarAlerta('Error al cargar los administradores.', 'danger'));
+  }
+
+  // ── Alta ───────────────────────────────────────────────
+  function abrirModalAlta() {
+    document.getElementById('modalTitulo').textContent  = 'Nuevo Administrador';
+    document.getElementById('admin-id').value           = '';
+    document.getElementById('admin-usuario').value      = '';
+    document.getElementById('admin-nombre').value       = '';
+    document.getElementById('admin-email').value        = '';
+    document.getElementById('admin-contrasena').value   = '';
+    document.getElementById('admin-usuario').disabled   = false;
+    document.getElementById('lblContrasena').innerHTML  =
+      'Contraseña <span class="text-danger">*</span>';
+    document.getElementById('infoContrasena').classList.add('d-none');
+    modalAdmin.show();
+  }
+
+  // ── Consulta / Edición ────────────────────────────────
+  function abrirModalEdicion(id) {
+    fetch(`${API}/${id}`)
+      .then(r => r.json())
+      .then(a => {
+        document.getElementById('modalTitulo').textContent  = 'Editar Administrador';
+        document.getElementById('admin-id').value           = a.id;
+        document.getElementById('admin-usuario').value      = a.usuario;
+        document.getElementById('admin-nombre').value       = a.nombreCompleto;
+        document.getElementById('admin-email').value        = a.email;
+        document.getElementById('admin-contrasena').value   = '';
+        document.getElementById('admin-usuario').disabled   = false;
+        document.getElementById('lblContrasena').innerHTML  = 'Contraseña';
+        document.getElementById('infoContrasena').classList.remove('d-none');
+        modalAdmin.show();
+      });
+  }
+
+  // ── Guardar (alta o modificación) ─────────────────────
+  function guardarAdmin() {
+    const id       = document.getElementById('admin-id').value;
+    const usuario  = document.getElementById('admin-usuario').value.trim();
+    const nombre   = document.getElementById('admin-nombre').value.trim();
+    const email    = document.getElementById('admin-email').value.trim();
+    const pass     = document.getElementById('admin-contrasena').value;
+
+    if (!usuario || !nombre || !email) {
+      mostrarAlerta('Usuario, nombre y email son obligatorios.', 'warning');
+      return;
+    }
+    if (!id && !pass) {
+      mostrarAlerta('La contraseña es obligatoria al crear un administrador.', 'warning');
+      return;
+    }
+
+    const body = { usuario, nombreCompleto: nombre, email };
+    if (pass) body.contrasena = pass;
+
+    const url    = id ? `${API}/${id}` : API;
+    const metodo = id ? 'PUT' : 'POST';
+
+    fetch(url, {
+      method:  metodo,
+      headers: { 'Content-Type': 'application/json' },
+      body:    JSON.stringify(body)
+    })
+      .then(r => r.json())
+      .then(res => {
+        if (!res.success) { mostrarAlerta(res.mensaje, 'danger'); return; }
+        modalAdmin.hide();
+        mostrarAlerta(res.mensaje, 'success');
+        cargarAdmins();
+      })
+      .catch(() => mostrarAlerta('Error de conexión al guardar.', 'danger'));
+  }
+
+  // ── Baja ──────────────────────────────────────────────
+  function abrirModalEliminar(id, nombre) {
+    idEliminar = id;
+    document.getElementById('nombreEliminar').textContent = nombre;
+    modalEliminar.show();
+  }
+
+  function confirmarEliminar() {
+    fetch(`${API}/${idEliminar}`, { method: 'DELETE' })
+      .then(r => r.json())
+      .then(res => {
+        modalEliminar.hide();
+        mostrarAlerta(res.mensaje, res.success ? 'success' : 'danger');
+        if (res.success) cargarAdmins();
+      })
+      .catch(() => mostrarAlerta('Error al eliminar.', 'danger'));
+  }
+
+  // ── Utilidades ────────────────────────────────────────
+  function togglePass() {
+    const input = document.getElementById('admin-contrasena');
+    const icono = document.getElementById('iconoOjo');
+    if (input.type === 'password') {
+      input.type   = 'text';
+      icono.className = 'bi bi-eye-slash';
+    } else {
+      input.type   = 'password';
+      icono.className = 'bi bi-eye';
+    }
+  }
+
+  function mostrarAlerta(msg, tipo) {
+    const el = document.getElementById('alerta');
+    el.className = `alert alert-${tipo}`;
+    el.textContent = msg;
+    setTimeout(() => el.classList.add('d-none'), 4000);
+  }
+
+  function esc(str) { return str ? str.replace(/'/g, "\\'") : ''; }
+
+  // Cargar al iniciar
+  document.addEventListener('DOMContentLoaded', cargarAdmins);
+</script>
+</body>
+</html>

@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Inicio | SiReSe</title>
+  <link rel="stylesheet" href="assets/css/bootstrap.min.css">
+  <link rel="stylesheet" href="assets/vendors/bootstrap-icons/bootstrap-icons.css">
+  <link rel="stylesheet" href="assets/css/style.css">
+</head>
+<body>
+<div class="admin-shell">
+  <!-- Injected by sirese-layout.js -->
+  <div class="admin-main">
+    <!-- Navbar injected -->
+    <div class="admin-content">
+      <div class="container-fluid px-3 px-lg-4 py-4">
+
+        <div class="mb-4">
+          <h1 class="h3 mb-1">Panel de Administración</h1>
+          <p class="text-muted">Bienvenido al Sistema de Registro de Aspirantes — UPIIZ-IPN</p>
+        </div>
+
+        <!-- Stats cards -->
+        <div class="row g-3 mb-4" id="statsRow">
+          <div class="col-12 col-sm-6 col-xl-3">
+            <div class="card border-0 shadow-sm h-100">
+              <div class="card-body d-flex align-items-center gap-3">
+                <div class="rounded-3 p-3 bg-primary bg-opacity-10">
+                  <i class="bi bi-people-fill fs-4 text-primary"></i>
+                </div>
+                <div>
+                  <div class="fs-4 fw-bold" id="statAspirantes">—</div>
+                  <div class="text-muted small">Total Aspirantes</div>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="col-12 col-sm-6 col-xl-3">
+            <div class="card border-0 shadow-sm h-100">
+              <div class="card-body d-flex align-items-center gap-3">
+                <div class="rounded-3 p-3 bg-success bg-opacity-10">
+                  <i class="bi bi-book-fill fs-4 text-success"></i>
+                </div>
+                <div>
+                  <div class="fs-4 fw-bold" id="statCarreras">—</div>
+                  <div class="text-muted small">Carreras Activas</div>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="col-12 col-sm-6 col-xl-3">
+            <div class="card border-0 shadow-sm h-100">
+              <div class="card-body d-flex align-items-center gap-3">
+                <div class="rounded-3 p-3 bg-warning bg-opacity-10">
+                  <i class="bi bi-file-earmark-text-fill fs-4 text-warning"></i>
+                </div>
+                <div>
+                  <div class="fs-4 fw-bold" id="statConstancias">—</div>
+                  <div class="text-muted small">Constancias Emitidas</div>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="col-12 col-sm-6 col-xl-3">
+            <div class="card border-0 shadow-sm h-100">
+              <div class="card-body d-flex align-items-center gap-3">
+                <div class="rounded-3 p-3 bg-danger bg-opacity-10">
+                  <i class="bi bi-envelope-fill fs-4 text-danger"></i>
+                </div>
+                <div>
+                  <div class="fs-4 fw-bold" id="statCorreos">—</div>
+                  <div class="text-muted small">Correos Enviados</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Quick access -->
+        <div class="row g-3">
+          <div class="col-12 col-md-6">
+            <div class="card border-0 shadow-sm">
+              <div class="card-header bg-transparent border-0 fw-semibold">
+                <i class="bi bi-lightning-fill text-primary me-2"></i>Acceso rápido
+              </div>
+              <div class="card-body">
+                <div class="d-grid gap-2">
+                  <a href="aspirantes.html" class="btn btn-outline-primary">
+                    <i class="bi bi-people me-2"></i>Gestionar Aspirantes
+                  </a>
+                  <a href="carreras.html" class="btn btn-outline-success">
+                    <i class="bi bi-book me-2"></i>Gestionar Carreras
+                  </a>
+                  <a href="constancias.html" class="btn btn-outline-warning">
+                    <i class="bi bi-file-earmark-pdf me-2"></i>Ver Constancias
+                  </a>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="col-12 col-md-6">
+            <div class="card border-0 shadow-sm">
+              <div class="card-header bg-transparent border-0 fw-semibold">
+                <i class="bi bi-clock-history text-muted me-2"></i>Registros recientes
+              </div>
+              <div class="card-body p-0">
+                <ul class="list-group list-group-flush" id="recentList">
+                  <li class="list-group-item text-muted small text-center py-3">
+                    <span class="spinner-border spinner-border-sm me-2"></span>Cargando...
+                  </li>
+                </ul>
+              </div>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="assets/js/bootstrap.bundle.min.js"></script>
+<script src="assets/js/main.js"></script>
+<script src="js/sirese-layout.js"></script>
+<script>
+  const API_BASE = 'http://localhost:8080/api';
+
+  // Load dashboard stats
+  function cargarEstadisticas() {
+    fetch(`${API_BASE}/dashboard/stats`)
+      .then(res => res.json())
+      .then(data => {
+        document.getElementById('statAspirantes').textContent = data.aspirantes ?? 0;
+        document.getElementById('statCarreras').textContent = data.carreras ?? 0;
+        document.getElementById('statConstancias').textContent = data.constancias ?? 0;
+        document.getElementById('statCorreos').textContent = data.correos ?? 0;
+      })
+      .catch(() => {
+        // Demo data
+        document.getElementById('statAspirantes').textContent = '142';
+        document.getElementById('statCarreras').textContent = '4';
+        document.getElementById('statConstancias').textContent = '38';
+        document.getElementById('statCorreos').textContent = '217';
+      });
+
+    fetch(`${API_BASE}/aspirantes/recientes`)
+      .then(res => res.json())
+      .then(lista => {
+        const ul = document.getElementById('recentList');
+        ul.innerHTML = lista.map(a => `
+          <li class="list-group-item d-flex justify-content-between align-items-center">
+            <div>
+              <div class="fw-semibold small">${a.nombre}</div>
+              <div class="text-muted" style="font-size:.75rem">${a.carrera}</div>
+            </div>
+            <span class="badge bg-primary-subtle text-primary">${a.fecha}</span>
+          </li>`).join('');
+      })
+      .catch(() => {
+        document.getElementById('recentList').innerHTML = `
+          <li class="list-group-item d-flex justify-content-between align-items-center">
+            <div><div class="fw-semibold small">María García López</div><div class="text-muted" style="font-size:.75rem">Ing. Sistemas Computacionales</div></div>
+            <span class="badge bg-primary-subtle text-primary">Hoy</span>
+          </li>
+          <li class="list-group-item d-flex justify-content-between align-items-center">
+            <div><div class="fw-semibold small">Juan Martínez Pérez</div><div class="text-muted" style="font-size:.75rem">Mecatrónica</div></div>
+            <span class="badge bg-primary-subtle text-primary">Ayer</span>
+          </li>
+          <li class="list-group-item d-flex justify-content-between align-items-center">
+            <div><div class="fw-semibold small">Ana González Fernández</div><div class="text-muted" style="font-size:.75rem">Inteligencia Artificial</div></div>
+            <span class="badge bg-secondary-subtle text-secondary">02 Jun</span>
+          </li>`;
+      });
+  }
+
+  cargarEstadisticas();
+</script>
+</body>
+</html>

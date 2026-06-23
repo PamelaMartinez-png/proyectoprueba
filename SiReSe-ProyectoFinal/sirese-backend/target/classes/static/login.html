@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Login Administrador | SiReSe</title>
+  <link rel="stylesheet" href="assets/css/bootstrap.min.css">
+  <link rel="stylesheet" href="assets/vendors/bootstrap-icons/bootstrap-icons.css">
+  <link rel="stylesheet" href="assets/css/style.css">
+</head>
+<body class="auth-body">
+
+  <button class="icon-button theme-toggle auth-theme-toggle" type="button" data-theme-toggle aria-label="Cambiar tema" title="Cambiar tema">
+    <i class="bi bi-moon-stars" data-theme-icon aria-hidden="true"></i>
+  </button>
+
+  <main class="auth-page">
+    <section class="auth-card">
+      <a class="auth-brand" href="login.html">
+        <span class="brand-icon"><i class="bi bi-mortarboard-fill" aria-hidden="true"></i></span>
+        <span><strong>SiReSe</strong><small>Acceso exclusivo para administradores.</small></span>
+      </a>
+
+      <div id="alertError" class="alert alert-danger d-none" role="alert">
+        <i class="bi bi-shield-exclamation me-2"></i>
+        <span id="alertErrorMsg">Credenciales incorrectas. Intenta de nuevo.</span>
+      </div>
+
+      <div class="mb-4">
+        <p class="eyebrow mb-1">Acceso Seguro</p>
+        <h1 class="h3 mb-1">Iniciar Sesión</h1>
+        <p class="text-muted mb-0">Ingresa a tu panel de administración.</p>
+      </div>
+
+      <div class="mb-3">
+        <label class="form-label" for="usuario">Usuario</label>
+        <input class="form-control" id="usuario" type="text" placeholder="Usuario administrador" required>
+        <div class="invalid-feedback">El usuario es requerido.</div>
+      </div>
+
+      <div class="mb-4">
+        <div class="d-flex justify-content-between">
+          <label class="form-label" for="contrasena">Contraseña</label>
+        </div>
+        <div class="input-group">
+          <input class="form-control" id="contrasena" type="password" placeholder="Contraseña" minlength="4" required>
+          <button class="btn btn-outline-secondary" type="button" id="togglePass" title="Mostrar/ocultar contraseña">
+            <i class="bi bi-eye" id="togglePassIcon"></i>
+          </button>
+        </div>
+        <div class="invalid-feedback">La contraseña es requerida.</div>
+      </div>
+
+      <button class="btn btn-primary w-100" id="btnLogin" type="button" onclick="iniciarSesion()">
+        <i class="bi bi-box-arrow-in-right" aria-hidden="true"></i> Ingresar
+      </button>
+
+      <div class="auth-footer mt-3">
+        <i class="bi bi-lock-fill me-1 text-muted"></i>
+        <small class="text-muted">Esta página es solo para administradores del sistema.</small>
+      </div>
+    </section>
+  </main>
+
+  <script src="assets/js/bootstrap.bundle.min.js"></script>
+  <script src="assets/js/main.js"></script>
+  <script>
+    const API_BASE = 'http://localhost:8080/api';
+
+    // Toggle password visibility
+    document.getElementById('togglePass').addEventListener('click', function() {
+      const input = document.getElementById('contrasena');
+      const icon = document.getElementById('togglePassIcon');
+      if (input.type === 'password') {
+        input.type = 'text';
+        icon.className = 'bi bi-eye-slash';
+      } else {
+        input.type = 'password';
+        icon.className = 'bi bi-eye';
+      }
+    });
+
+    // Enter key support
+    document.getElementById('contrasena').addEventListener('keypress', function(e) {
+      if (e.key === 'Enter') iniciarSesion();
+    });
+
+    function iniciarSesion() {
+      const usuario = document.getElementById('usuario');
+      const contrasena = document.getElementById('contrasena');
+      let valido = true;
+
+      if (!usuario.value.trim()) { usuario.classList.add('is-invalid'); valido = false; }
+      else usuario.classList.remove('is-invalid');
+
+      if (!contrasena.value.trim()) { contrasena.classList.add('is-invalid'); valido = false; }
+      else contrasena.classList.remove('is-invalid');
+
+      if (!valido) return;
+
+      const btn = document.getElementById('btnLogin');
+      btn.disabled = true;
+      btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Verificando...';
+
+      const datos = {
+        usuario: usuario.value.trim(),
+        contrasena: contrasena.value.trim()
+      };
+
+      fetch(`${API_BASE}/auth/login`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(datos)
+      })
+      .then(res => res.json())
+      .then(data => {
+        if (data.success) {
+          sessionStorage.setItem('adminLogged', 'true');
+          sessionStorage.setItem('adminNombre', data.nombre || 'Administrador');
+          // Redirect via JavaScript
+          window.location.href = 'index.html';
+        } else {
+          mostrarError(data.mensaje || 'Credenciales incorrectas. Intenta de nuevo.');
+        }
+      })
+      .catch(() => {
+        // Demo mode: accept admin/admin
+        if (datos.usuario === 'admin' && datos.contrasena === 'admin') {
+          sessionStorage.setItem('adminLogged', 'true');
+          sessionStorage.setItem('adminNombre', 'Administrador Demo');
+          window.location.href = 'index.html';
+        } else {
+          mostrarError('(Modo demo) Usuario o contraseña incorrectos. Usa admin/admin para probar.');
+        }
+      })
+      .finally(() => {
+        btn.disabled = false;
+        btn.innerHTML = '<i class="bi bi-box-arrow-in-right"></i> Ingresar';
+      });
+    }
+
+    function mostrarError(msg) {
+      document.getElementById('alertErrorMsg').textContent = msg;
+      document.getElementById('alertError').classList.remove('d-none');
+    }
+  </script>
+</body>
+</html>

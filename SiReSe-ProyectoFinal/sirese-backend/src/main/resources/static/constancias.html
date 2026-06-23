@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Constancias | SiReSe</title>
+  <link rel="stylesheet" href="assets/css/bootstrap.min.css">
+  <link rel="stylesheet" href="assets/vendors/bootstrap-icons/bootstrap-icons.css">
+  <link rel="stylesheet" href="assets/css/style.css">
+  <link rel="stylesheet" href="https://cdn.datatables.net/1.13.8/css/dataTables.bootstrap5.min.css">
+</head>
+<body>
+<div class="admin-shell">
+  <div class="admin-main">
+    <div class="admin-content">
+      <div class="container-fluid px-3 px-lg-4 py-4">
+
+        <div class="mb-4">
+          <h1 class="h3 mb-0">Constancias Emitidas</h1>
+          <nav aria-label="breadcrumb"><ol class="breadcrumb mb-0 small">
+            <li class="breadcrumb-item"><a href="index.html">Inicio</a></li>
+            <li class="breadcrumb-item active">Constancias</li>
+          </ol></nav>
+        </div>
+
+        <div class="card border-0 shadow-sm">
+          <div class="card-header bg-transparent border-0 fw-semibold py-3">
+            <i class="bi bi-file-earmark-text me-2 text-danger"></i>Historial de Constancias
+          </div>
+          <div class="card-body">
+            <table id="tablaConstancias" class="table table-hover w-100">
+              <thead>
+                <tr>
+                  <th>#</th>
+                  <th>Aspirante</th>
+                  <th>Carrera</th>
+                  <th>Fecha Emisión</th>
+                  <th class="text-center">Acciones</th>
+                </tr>
+              </thead>
+              <tbody id="tbodyConstancias"></tbody>
+            </table>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Modal PDF Preview -->
+<div class="modal fade" id="modalPDF" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-lg">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title"><i class="bi bi-file-earmark-pdf me-2 text-danger"></i>Constancia</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body p-0">
+        <iframe id="pdfFrame" src="" style="width:100%;height:500px;border:none;"></iframe>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
+        <a id="btnDescPDF" href="#" class="btn btn-danger" download>
+          <i class="bi bi-download me-1"></i>Descargar
+        </a>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="assets/js/bootstrap.bundle.min.js"></script>
+<script src="https://code.jquery.com/jquery-3.7.0.min.js"></script>
+<script src="https://cdn.datatables.net/1.13.8/js/jquery.dataTables.min.js"></script>
+<script src="https://cdn.datatables.net/1.13.8/js/dataTables.bootstrap5.min.js"></script>
+<script src="assets/js/main.js"></script>
+<script src="js/sirese-layout.js"></script>
+<script>
+  const API_BASE = 'http://localhost:8080/api';
+
+  // Datos de respaldo cuando el servidor no está disponible
+  const demoConstancias = [
+    { id: 1, aspirante: 'María García López',     carrera: 'Ing. Sistemas Computacionales', fecha: '2026-01-15', aspiranteId: 1 },
+    { id: 2, aspirante: 'Juan Martínez Pérez',    carrera: 'Mecatrónica',                  fecha: '2026-01-16', aspiranteId: 2 },
+    { id: 3, aspirante: 'Ana González Fernández', carrera: 'Inteligencia Artificial',      fecha: '2026-01-17', aspiranteId: 3 },
+  ];
+
+  $(document).ready(function() {
+    const tabla = $('#tablaConstancias').DataTable({
+      language: { url: 'https://cdn.datatables.net/plug-ins/1.13.8/i18n/es-ES.json' },
+      order: [[3, 'desc']], // Más recientes primero
+      columns: [
+        { data: 'id' },
+        { data: 'aspirante' },
+        { data: 'carrera' },
+        { data: 'fecha' },
+        {
+          data: null, orderable: false,
+          render: d => `
+            <div class="d-flex justify-content-center">
+              <button class="btn btn-sm btn-danger" onclick="verPDF(${d.aspiranteId})" title="Ver constancia PDF">
+                <i class="bi bi-file-earmark-pdf me-1"></i>Ver PDF
+              </button>
+            </div>`
+        }
+      ]
+    });
+
+    // Carga el historial real desde /api/constancias
+    // El backend devuelve: [{ id, aspiranteId, aspirante, carrera, fecha }]
+    fetch(`${API_BASE}/constancias`)
+      .then(res => {
+        if (!res.ok) throw new Error('Sin datos');
+        return res.json();
+      })
+      .then(data => {
+        if (data.length === 0) {
+          tabla.clear().draw();
+          // Mostrar mensaje de lista vacía sin modo demo
+          return;
+        }
+        tabla.clear().rows.add(data).draw();
+      })
+      .catch(() => {
+        // Modo demo: servidor no disponible
+        tabla.clear().rows.add(demoConstancias).draw();
+      });
+  });
+
+  function verPDF(aspiranteId) {
+    const url = `${API_BASE}/aspirantes/${aspiranteId}/constancia.pdf`;
+    document.getElementById('pdfFrame').src = url;
+    document.getElementById('btnDescPDF').href = url;
+    new bootstrap.Modal(document.getElementById('modalPDF')).show();
+  }
+</script>
+</body>
+</html>

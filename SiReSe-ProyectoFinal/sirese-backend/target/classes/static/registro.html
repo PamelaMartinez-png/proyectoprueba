@@ -1,0 +1,223 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Registro de Aspirante | SiReSe</title>
+  <link rel="stylesheet" href="assets/css/bootstrap.min.css">
+  <link rel="stylesheet" href="assets/vendors/bootstrap-icons/bootstrap-icons.css">
+  <link rel="stylesheet" href="assets/css/style.css">
+</head>
+<body class="auth-body">
+
+  <button class="icon-button theme-toggle auth-theme-toggle" type="button" data-theme-toggle aria-label="Cambiar tema" title="Cambiar tema">
+    <i class="bi bi-moon-stars" data-theme-icon aria-hidden="true"></i>
+  </button>
+
+  <main class="auth-page">
+    <section class="auth-card" style="max-width:520px">
+      <a class="auth-brand" href="registro.html">
+        <span class="brand-icon"><i class="bi bi-mortarboard-fill" aria-hidden="true"></i></span>
+        <span><strong>SiReSe</strong><small>Sistema de Registro de Aspirantes</small></span>
+      </a>
+
+      <!-- Alert containers -->
+      <div id="alertSuccess" class="alert alert-success d-none" role="alert">
+        <i class="bi bi-check-circle-fill me-2"></i>
+        <span id="alertSuccessMsg">Registro exitoso. Se ha enviado un correo de confirmación.</span>
+      </div>
+      <div id="alertError" class="alert alert-danger d-none" role="alert">
+        <i class="bi bi-exclamation-triangle-fill me-2"></i>
+        <span id="alertErrorMsg">Ocurrió un error. Intente de nuevo.</span>
+      </div>
+
+      <div class="mb-4">
+        <p class="eyebrow mb-1">Bienvenido</p>
+        <h1 class="h3 mb-1">Registro de Aspirante</h1>
+        <p class="text-muted mb-0">Completa el formulario para iniciar tu proceso de inscripción.</p>
+      </div>
+
+      <div class="mb-3">
+        <label class="form-label" for="nombre">Nombre completo</label>
+        <input class="form-control" id="nombre" type="text" placeholder="Nombre completo" required pattern="[A-Za-záéíóúÁÉÍÓÚñÑ\s]{3,}">
+        <div class="invalid-feedback">Ingresa tu nombre completo (mínimo 3 caracteres, solo letras).</div>
+      </div>
+
+      <div class="mb-3">
+        <label class="form-label" for="telefono">Teléfono (10 dígitos)</label>
+        <input class="form-control" id="telefono" type="tel" placeholder="Ej. 4921234567" required pattern="[0-9]{10}" maxlength="10">
+        <div class="invalid-feedback">El teléfono debe tener exactamente 10 dígitos.</div>
+      </div>
+
+      <div class="mb-3">
+        <label class="form-label" for="email">Correo electrónico</label>
+        <input class="form-control" id="email" type="email" placeholder="correo@ejemplo.com" required>
+        <div class="invalid-feedback" id="emailFeedback">Ingresa un correo válido.</div>
+        <div id="emailCheckSpinner" class="form-text d-none">
+          <span class="spinner-border spinner-border-sm me-1"></span> Verificando disponibilidad...
+        </div>
+      </div>
+
+      <div class="mb-4">
+        <label class="form-label" for="carrera">Selecciona una carrera</label>
+        <select class="form-select" id="carrera" required>
+          <option value="" disabled selected>-- Cargando carreras... --</option>
+        </select>
+        <div class="invalid-feedback">Selecciona una carrera.</div>
+      </div>
+
+      <button class="btn btn-primary w-100" id="btnRegistrar" type="button" onclick="registrarAspirante()">
+        <i class="bi bi-person-plus" aria-hidden="true"></i> Registrarse
+      </button>
+
+      <div class="auth-footer mt-3">¿Ya eres administrador? <a href="login.html">Iniciar sesión</a></div>
+    </section>
+  </main>
+
+  <script src="assets/js/bootstrap.bundle.min.js"></script>
+  <script src="assets/js/main.js"></script>
+  <script>
+    const API_BASE = 'http://localhost:8080/api';
+
+    // Datos de respaldo por si el servidor no está disponible
+    const carrerasFallback = [
+      { id: 1, nombre: 'Ingeniería en Sistemas Computacionales' },
+      { id: 2, nombre: 'Mecatrónica' },
+      { id: 3, nombre: 'Inteligencia Artificial' },
+      { id: 4, nombre: 'Ingeniería en Alimentos' }
+    ];
+
+    // Cargar carreras dinámicamente con AJAX al abrir la página
+    function cargarCarreras(carreras) {
+      const sel = document.getElementById('carrera');
+      sel.innerHTML = '<option value="" disabled selected>-- Selecciona una carrera --</option>';
+      carreras.forEach(c => {
+        const opt = document.createElement('option');
+        opt.value = c.id;
+        opt.textContent = c.nombre;
+        sel.appendChild(opt);
+      });
+    }
+
+    fetch(`${API_BASE}/carreras`)
+      .then(res => res.json())
+      .then(data => cargarCarreras(data))
+      .catch(() => cargarCarreras(carrerasFallback));
+
+    // Validate email availability via AJAX on blur
+    document.getElementById('email').addEventListener('blur', function() {
+      const email = this.value.trim();
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      if (!emailRegex.test(email)) return;
+
+      document.getElementById('emailCheckSpinner').classList.remove('d-none');
+
+      // AJAX call to check email
+      fetch(`${API_BASE}/aspirantes/check-email?email=${encodeURIComponent(email)}`)
+        .then(res => res.json())
+        .then(data => {
+          document.getElementById('emailCheckSpinner').classList.add('d-none');
+          const input = document.getElementById('email');
+          const feedback = document.getElementById('emailFeedback');
+          if (data.exists) {
+            input.classList.add('is-invalid');
+            feedback.textContent = 'Este correo ya está registrado. Usa otro correo.';
+          } else {
+            input.classList.remove('is-invalid');
+            input.classList.add('is-valid');
+          }
+        })
+        .catch(() => {
+          document.getElementById('emailCheckSpinner').classList.add('d-none');
+          // Silently fail if server not available (demo mode)
+        });
+    });
+
+    function validarFormulario() {
+      const nombre = document.getElementById('nombre');
+      const telefono = document.getElementById('telefono');
+      const email = document.getElementById('email');
+      const carrera = document.getElementById('carrera');
+      let valido = true;
+
+      // Nombre
+      const nombreRegex = /^[A-Za-záéíóúÁÉÍÓÚñÑ\s]{3,}$/;
+      if (!nombreRegex.test(nombre.value.trim())) {
+        nombre.classList.add('is-invalid'); valido = false;
+      } else { nombre.classList.remove('is-invalid'); nombre.classList.add('is-valid'); }
+
+      // Teléfono
+      const telRegex = /^[0-9]{10}$/;
+      if (!telRegex.test(telefono.value.trim())) {
+        telefono.classList.add('is-invalid'); valido = false;
+      } else { telefono.classList.remove('is-invalid'); telefono.classList.add('is-valid'); }
+
+      // Email
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      if (!emailRegex.test(email.value.trim()) || email.classList.contains('is-invalid')) {
+        if (!email.classList.contains('is-invalid')) email.classList.add('is-invalid');
+        document.getElementById('emailFeedback').textContent = 'Ingresa un correo electrónico válido.';
+        valido = false;
+      }
+
+      // Carrera
+      if (!carrera.value) {
+        carrera.classList.add('is-invalid'); valido = false;
+      } else { carrera.classList.remove('is-invalid'); carrera.classList.add('is-valid'); }
+
+      return valido;
+    }
+
+    function registrarAspirante() {
+      if (!validarFormulario()) return;
+
+      const btn = document.getElementById('btnRegistrar');
+      btn.disabled = true;
+      btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Registrando...';
+
+      const datos = {
+        nombre: document.getElementById('nombre').value.trim(),
+        telefono: document.getElementById('telefono').value.trim(),
+        email: document.getElementById('email').value.trim(),
+        carreraId: document.getElementById('carrera').value
+      };
+
+      fetch(`${API_BASE}/aspirantes/registrar`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(datos)
+      })
+      .then(res => res.json())
+      .then(data => {
+        if (data.success) {
+          mostrarAlerta('success', '¡Registro exitoso! Se ha enviado un correo de confirmación al administrador.');
+          document.querySelectorAll('input, select').forEach(el => { el.value = ''; el.className = el.className.replace('is-valid',''); });
+        } else {
+          mostrarAlerta('error', data.mensaje || 'Error al registrar. Intenta de nuevo.');
+        }
+      })
+      .catch(() => {
+        // Demo mode response
+        mostrarAlerta('success', '(Modo demo) ¡Registro simulado exitoso! En producción se enviará correo al administrador.');
+      })
+      .finally(() => {
+        btn.disabled = false;
+        btn.innerHTML = '<i class="bi bi-person-plus"></i> Registrarse';
+      });
+    }
+
+    function mostrarAlerta(tipo, msg) {
+      document.getElementById('alertSuccess').classList.add('d-none');
+      document.getElementById('alertError').classList.add('d-none');
+      if (tipo === 'success') {
+        document.getElementById('alertSuccessMsg').textContent = msg;
+        document.getElementById('alertSuccess').classList.remove('d-none');
+      } else {
+        document.getElementById('alertErrorMsg').textContent = msg;
+        document.getElementById('alertError').classList.remove('d-none');
+      }
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+  </script>
+</body>
+</html>

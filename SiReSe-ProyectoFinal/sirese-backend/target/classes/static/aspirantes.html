@@ -1,0 +1,714 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Aspirantes | SiReSe</title>
+  <link rel="stylesheet" href="assets/css/bootstrap.min.css">
+  <link rel="stylesheet" href="assets/vendors/bootstrap-icons/bootstrap-icons.css">
+  <link rel="stylesheet" href="assets/css/style.css">
+  <link rel="stylesheet" href="https://cdn.datatables.net/1.13.8/css/dataTables.bootstrap5.min.css">
+  <link rel="stylesheet" href="https://cdn.datatables.net/buttons/2.4.2/css/buttons.bootstrap5.min.css">
+</head>
+<body>
+<div class="admin-shell">
+  <div class="admin-main">
+    <div class="admin-content">
+      <div class="container-fluid px-3 px-lg-4 py-4">
+
+        <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-2">
+          <div>
+            <h1 class="h3 mb-0">Listado de Aspirantes</h1>
+            <nav aria-label="breadcrumb"><ol class="breadcrumb mb-0 small">
+              <li class="breadcrumb-item"><a href="index.html">Inicio</a></li>
+              <li class="breadcrumb-item active">Aspirantes</li>
+            </ol></nav>
+          </div>
+          <div class="d-flex gap-2">
+            <button class="btn btn-success fw-semibold" onclick="abrirModalNuevoAspirante()">
+              <i class="bi bi-person-plus-fill me-1"></i> Nuevo Aspirante
+            </button>
+            <button class="btn btn-warning text-dark fw-semibold" onclick="abrirCorreoMasivo()">
+              <i class="bi bi-envelope-fill me-1"></i> Correo Masivo
+            </button>
+          </div>
+        </div>
+
+        <div id="alertMsg" class="alert d-none mb-3" role="alert"></div>
+
+        <div class="card border-0 shadow-sm">
+          <div class="card-body">
+            <table id="tablaAspirantes" class="table table-hover w-100">
+              <thead>
+                <tr>
+                  <th>#</th>
+                  <th>Nombre</th>
+                  <th>Teléfono</th>
+                  <th>Correo</th>
+                  <th>Carrera</th>
+                  <th class="text-center">Acciones</th>
+                </tr>
+              </thead>
+              <tbody id="tbodyAspirantes"></tbody>
+            </table>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ===== MODAL: Nuevo Aspirante (Alta desde panel admin) ===== -->
+<div class="modal fade" id="modalNuevoAspirante" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title"><i class="bi bi-person-plus-fill me-2 text-success"></i>Nuevo Aspirante</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body">
+        <div class="mb-3">
+          <label class="form-label" for="nuevoNombre">Nombre completo <span class="text-danger">*</span></label>
+          <input type="text" class="form-control" id="nuevoNombre" placeholder="Nombre completo del aspirante" required>
+          <div class="invalid-feedback">El nombre es requerido (mínimo 3 caracteres, solo letras).</div>
+        </div>
+        <div class="mb-3">
+          <label class="form-label" for="nuevoTelefono">Teléfono (10 dígitos) <span class="text-danger">*</span></label>
+          <input type="text" class="form-control" id="nuevoTelefono" placeholder="Ej. 4921234567" maxlength="10" required>
+          <div class="invalid-feedback">El teléfono debe tener exactamente 10 dígitos.</div>
+        </div>
+        <div class="mb-3">
+          <label class="form-label" for="nuevoEmail">Correo electrónico <span class="text-danger">*</span></label>
+          <input type="email" class="form-control" id="nuevoEmail" placeholder="correo@ejemplo.com" required>
+          <div class="invalid-feedback" id="nuevoEmailFeedback">Ingresa un correo válido.</div>
+        </div>
+        <div class="mb-0">
+          <label class="form-label" for="nuevoCarrera">Carrera <span class="text-danger">*</span></label>
+          <select class="form-select" id="nuevoCarrera" required>
+            <option value="">Selecciona una carrera...</option>
+          </select>
+          <div class="invalid-feedback">Selecciona una carrera.</div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+        <button type="button" class="btn btn-success" id="btnGuardarNuevoAspirante" onclick="guardarNuevoAspirante()">
+          <i class="bi bi-floppy me-1"></i>Registrar Aspirante
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ===== MODAL: Ver Aspirante ===== -->
+<div class="modal fade" id="modalVer" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title"><i class="bi bi-person-circle me-2"></i>Datos del Aspirante</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body">
+        <div class="mb-3">
+          <label class="form-label text-muted small fw-semibold">NOMBRE COMPLETO</label>
+          <input class="form-control" id="verNombre" readonly>
+        </div>
+        <div class="mb-3">
+          <label class="form-label text-muted small fw-semibold">TELÉFONO</label>
+          <input class="form-control" id="verTelefono" readonly>
+        </div>
+        <div class="mb-3">
+          <label class="form-label text-muted small fw-semibold">CORREO ELECTRÓNICO</label>
+          <input class="form-control" id="verEmail" readonly>
+        </div>
+        <div class="mb-3">
+          <label class="form-label text-muted small fw-semibold">CARRERA</label>
+          <input class="form-control" id="verCarrera" readonly>
+        </div>
+        <div class="mb-0">
+          <label class="form-label text-muted small fw-semibold">FECHA DE REGISTRO</label>
+          <input class="form-control" id="verFecha" readonly>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
+        <button type="button" class="btn btn-danger" onclick="generarConstanciaPDF(currentAspiranteId)">
+          <i class="bi bi-file-earmark-pdf me-1"></i>Generar Constancia PDF
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ===== MODAL: Correo Individual ===== -->
+<div class="modal fade" id="modalCorreoInd" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title"><i class="bi bi-envelope me-2"></i>Enviar Correo Individual</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body">
+        <div class="alert alert-info small mb-3">
+          <i class="bi bi-info-circle me-1"></i>
+          Destinatario: <strong id="correoIndDest"></strong>
+        </div>
+        <div class="mb-3">
+          <label class="form-label">Asunto <span class="text-danger">*</span></label>
+          <input type="text" class="form-control" id="correoIndAsunto" placeholder="Indica el asunto del correo">
+        </div>
+        <div class="mb-3">
+          <label class="form-label">Mensaje <span class="text-danger">*</span></label>
+          <textarea class="form-control" id="correoIndMensaje" rows="5" placeholder="Escribe tu mensaje aquí..."></textarea>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+        <button type="button" class="btn btn-warning text-dark" onclick="enviarCorreoIndividual()">
+          <i class="bi bi-send me-1"></i>Enviar
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ===== MODAL: Correo Masivo ===== -->
+<div class="modal fade" id="modalCorreoMasivo" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title"><i class="bi bi-envelope-fill me-2"></i>Correo Masivo</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body">
+        <div class="alert alert-warning small mb-3">
+          <i class="bi bi-exclamation-triangle me-1"></i>
+          Este correo se enviará a <strong>todos los aspirantes</strong> registrados.
+        </div>
+        <div class="mb-3">
+          <label class="form-label">Asunto <span class="text-danger">*</span></label>
+          <input type="text" class="form-control" id="correoMasivoAsunto" placeholder="Indica el asunto">
+        </div>
+        <div class="mb-3">
+          <label class="form-label">Mensaje <span class="text-danger">*</span></label>
+          <textarea class="form-control" id="correoMasivoMensaje" rows="5" placeholder="Escribe tu mensaje..."></textarea>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+        <button type="button" class="btn btn-success" onclick="enviarCorreoMasivo()">
+          <i class="bi bi-send-fill me-1"></i>Enviar a todos
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ===== MODAL: Constancia PDF Preview ===== -->
+<div class="modal fade" id="modalConstancia" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-lg">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title"><i class="bi bi-file-earmark-pdf me-2 text-danger"></i>Constancia del Aspirante</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body p-0">
+        <iframe id="constanciaFrame" src="" style="width:100%;height:500px;border:none;"></iframe>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
+        <a id="btnDescargarConstancia" href="#" class="btn btn-danger" download>
+          <i class="bi bi-download me-1"></i>Descargar PDF
+        </a>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ===== MODAL: Editar Aspirante ===== -->
+<div class="modal fade" id="modalEditarAspirante" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title"><i class="bi bi-pencil-square me-2"></i>Editar Aspirante</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body">
+        <input type="hidden" id="editAspiranteId">
+        <div class="mb-3">
+          <label class="form-label" for="editNombre">Nombre completo <span class="text-danger">*</span></label>
+          <input type="text" class="form-control" id="editNombre" required>
+          <div class="invalid-feedback">El nombre es requerido.</div>
+        </div>
+        <div class="mb-3">
+          <label class="form-label" for="editTelefono">Teléfono (10 dígitos) <span class="text-danger">*</span></label>
+          <input type="text" class="form-control" id="editTelefono" maxlength="10" required>
+          <div class="invalid-feedback">El teléfono debe tener exactamente 10 dígitos.</div>
+        </div>
+        <div class="mb-3">
+          <label class="form-label" for="editEmail">Correo electrónico <span class="text-danger">*</span></label>
+          <input type="email" class="form-control" id="editEmail" required>
+          <div class="invalid-feedback">Ingresa un correo válido.</div>
+        </div>
+        <div class="mb-0">
+          <label class="form-label" for="editCarrera">Carrera <span class="text-danger">*</span></label>
+          <select class="form-select" id="editCarrera" required>
+            <option value="">Selecciona una carrera...</option>
+          </select>
+          <div class="invalid-feedback">Selecciona una carrera.</div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+        <button type="button" class="btn btn-primary" id="btnGuardarAspirante" onclick="guardarAspiranteEdit()">
+          <i class="bi bi-floppy me-1"></i>Guardar cambios
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ===== MODAL: Eliminar Aspirante ===== -->
+<div class="modal fade" id="modalEliminarAspirante" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content">
+      <div class="modal-header border-0">
+        <h5 class="modal-title text-danger"><i class="bi bi-trash3 me-2"></i>Eliminar Aspirante</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body">
+        <p>¿Estás seguro de eliminar al aspirante <strong id="nombreAspiranteEliminar"></strong>?</p>
+        <p class="text-muted small mb-0">Esta acción no se puede deshacer.</p>
+      </div>
+      <div class="modal-footer border-0">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+        <button type="button" class="btn btn-danger" id="btnConfirmarEliminarAspirante" onclick="confirmarEliminarAspirante()">
+          <i class="bi bi-trash3 me-1"></i>Eliminar
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="assets/js/bootstrap.bundle.min.js"></script>
+<script src="https://code.jquery.com/jquery-3.7.0.min.js"></script>
+<script src="https://cdn.datatables.net/1.13.8/js/jquery.dataTables.min.js"></script>
+<script src="https://cdn.datatables.net/1.13.8/js/dataTables.bootstrap5.min.js"></script>
+<script src="https://cdn.datatables.net/buttons/2.4.2/js/dataTables.buttons.min.js"></script>
+<script src="https://cdn.datatables.net/buttons/2.4.2/js/buttons.bootstrap5.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+<script src="https://cdn.datatables.net/buttons/2.4.2/js/buttons.html5.min.js"></script>
+<script src="assets/js/main.js"></script>
+<script src="js/sirese-layout.js"></script>
+<script>
+  const API_BASE = 'http://localhost:8080/api';
+  let tablaAspirantes;
+  let currentAspiranteId = null;
+  let currentCorreoEmail = null;
+
+  const demoAspirantes = [
+    { id: 1, nombre: 'María García López',     telefono: '4921112233', email: 'maria.garcia@example.com',   carrera: 'Ing. Sistemas Computacionales', carreraId: 1, fecha: '2026-01-10' },
+    { id: 2, nombre: 'Juan Martínez Pérez',    telefono: '4923334455', email: 'juan.martinez@example.com',  carrera: 'Mecatrónica',                  carreraId: 2, fecha: '2026-01-11' },
+    { id: 3, nombre: 'Ana González Fernández', telefono: '4925556677', email: 'ana.gonzalez@example.com',   carrera: 'Inteligencia Artificial',      carreraId: 3, fecha: '2026-01-12' },
+    { id: 4, nombre: 'Luis Rodríguez Gómez',   telefono: '4927778899', email: 'luis.rodriguez@example.com', carrera: 'Ing. en Alimentos',            carreraId: 4, fecha: '2026-01-13' },
+    { id: 5, nombre: 'Carmen Sánchez Ruiz',    telefono: '4929990011', email: 'carmen.sanchez@example.com', carrera: 'Mecatrónica',                  carreraId: 2, fecha: '2026-01-14' },
+  ];
+
+  const demoCarrerasSelect = [
+    { id: 1, nombre: 'Ingeniería en Sistemas Computacionales' },
+    { id: 2, nombre: 'Mecatrónica' },
+    { id: 3, nombre: 'Inteligencia Artificial' },
+    { id: 4, nombre: 'Ingeniería en Alimentos' },
+  ];
+
+  let aspiranteParaEliminar = null;
+
+  $(document).ready(function() {
+    tablaAspirantes = $('#tablaAspirantes').DataTable({
+      language: { url: 'https://cdn.datatables.net/plug-ins/1.13.8/i18n/es-ES.json' },
+      dom: 'Bfrtip',
+      buttons: [
+        { extend: 'copy',  className: 'btn btn-sm btn-outline-secondary', text: '<i class="bi bi-clipboard me-1"></i>Copiar' },
+        { extend: 'csv',   className: 'btn btn-sm btn-outline-secondary', text: '<i class="bi bi-filetype-csv me-1"></i>CSV'  },
+        { extend: 'excel', className: 'btn btn-sm btn-outline-secondary', text: '<i class="bi bi-file-earmark-excel me-1"></i>Excel' }
+      ],
+      columns: [
+        { data: 'id' },
+        { data: 'nombre' },
+        { data: 'telefono' },
+        { data: 'email' },
+        { data: 'carrera' },
+        {
+          data: null, orderable: false,
+          render: function(d) {
+            return `
+              <div class="d-flex gap-1 justify-content-center">
+                <button class="btn btn-sm btn-warning text-dark" title="Enviar correo individual"
+                  onclick="abrirCorreoIndividual(${d.id},'${d.nombre.replace(/'/g,"\\'")}','${d.email}')">
+                  <i class="bi bi-envelope"></i>
+                </button>
+                <button class="btn btn-sm btn-info text-white" title="Ver datos completos"
+                  onclick="verAspirante(${d.id})">
+                  <i class="bi bi-eye"></i>
+                </button>
+                <button class="btn btn-sm btn-primary" title="Editar aspirante"
+                  onclick="abrirModalEditarAspirante(${d.id})">
+                  <i class="bi bi-pencil"></i>
+                </button>
+                <button class="btn btn-sm btn-outline-danger" title="Eliminar aspirante"
+                  onclick="abrirModalEliminarAspirante(${d.id}, '${d.nombre.replace(/'/g,"\\'")}')">
+                  <i class="bi bi-trash3"></i>
+                </button>
+                <button class="btn btn-sm btn-danger" title="Generar constancia PDF"
+                  onclick="generarConstanciaPDF(${d.id})">
+                  <i class="bi bi-printer"></i>
+                </button>
+              </div>`;
+          }
+        }
+      ]
+    });
+
+    cargarAspirantes();
+  });
+
+  function cargarAspirantes() {
+    fetch(`${API_BASE}/aspirantes`)
+      .then(res => res.json())
+      .then(data => {
+        // El backend anida el objeto Carrera completo; lo normalizamos a un
+        // formato plano (igual al de los datos demo) para que la tabla y
+        // los modales funcionen igual con datos reales o simulados.
+        const normalizado = data.map(a => ({
+          id: a.id,
+          nombre: a.nombre,
+          telefono: a.telefono,
+          email: a.email,
+          carrera: a.carrera ? a.carrera.nombre : '—',
+          carreraId: a.carrera ? a.carrera.id : null,
+          fecha: a.fechaRegistro
+        }));
+        tablaAspirantes.clear().rows.add(normalizado).draw();
+      })
+      .catch(() => tablaAspirantes.clear().rows.add(demoAspirantes).draw());
+  }
+
+  function verAspirante(id) {
+    currentAspiranteId = id;
+    fetch(`${API_BASE}/aspirantes/${id}`)
+      .then(res => res.json())
+      .then(a => poblarModalVer({
+        nombre: a.nombre,
+        telefono: a.telefono,
+        email: a.email,
+        carrera: a.carrera ? a.carrera.nombre : '—',
+        fecha: a.fechaRegistro
+      }))
+      .catch(() => {
+        const a = demoAspirantes.find(x => x.id === id);
+        if (a) poblarModalVer(a);
+      });
+  }
+
+  function poblarModalVer(a) {
+    document.getElementById('verNombre').value   = a.nombre;
+    document.getElementById('verTelefono').value = a.telefono;
+    document.getElementById('verEmail').value    = a.email;
+    document.getElementById('verCarrera').value  = a.carrera;
+    document.getElementById('verFecha').value    = a.fecha || '—';
+    new bootstrap.Modal(document.getElementById('modalVer')).show();
+  }
+
+  function abrirCorreoIndividual(id, nombre, email) {
+    currentAspiranteId = id;
+    currentCorreoEmail = email;
+    document.getElementById('correoIndDest').textContent = `${nombre} <${email}>`;
+    document.getElementById('correoIndAsunto').value = '';
+    document.getElementById('correoIndMensaje').value = '';
+    new bootstrap.Modal(document.getElementById('modalCorreoInd')).show();
+  }
+
+  function enviarCorreoIndividual() {
+    const asunto  = document.getElementById('correoIndAsunto').value.trim();
+    const mensaje = document.getElementById('correoIndMensaje').value.trim();
+    if (!asunto || !mensaje) { alert('Por favor completa asunto y mensaje.'); return; }
+
+    const datos = { aspiranteId: currentAspiranteId, asunto, mensaje };
+
+    fetch(`${API_BASE}/correo/individual`, {
+      method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(datos)
+    })
+    .then(res => res.json())
+    .then(() => {
+      bootstrap.Modal.getInstance(document.getElementById('modalCorreoInd')).hide();
+      mostrarAlerta('success', 'Correo enviado correctamente.');
+    })
+    .catch(() => {
+      bootstrap.Modal.getInstance(document.getElementById('modalCorreoInd')).hide();
+      mostrarAlerta('success', `(Demo) Correo simulado enviado a ${currentCorreoEmail}.`);
+    });
+  }
+
+  function abrirCorreoMasivo() {
+    document.getElementById('correoMasivoAsunto').value = '';
+    document.getElementById('correoMasivoMensaje').value = '';
+    new bootstrap.Modal(document.getElementById('modalCorreoMasivo')).show();
+  }
+
+  function enviarCorreoMasivo() {
+    const asunto  = document.getElementById('correoMasivoAsunto').value.trim();
+    const mensaje = document.getElementById('correoMasivoMensaje').value.trim();
+    if (!asunto || !mensaje) { alert('Por favor completa asunto y mensaje.'); return; }
+
+    fetch(`${API_BASE}/correo/masivo`, {
+      method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ asunto, mensaje })
+    })
+    .then(res => res.json())
+    .then(data => {
+      bootstrap.Modal.getInstance(document.getElementById('modalCorreoMasivo')).hide();
+      mostrarAlerta('success', `Correo enviado a ${data.total || 'todos los'} aspirantes.`);
+    })
+    .catch(() => {
+      bootstrap.Modal.getInstance(document.getElementById('modalCorreoMasivo')).hide();
+      mostrarAlerta('success', `(Demo) Correo masivo simulado enviado a ${demoAspirantes.length} aspirantes.`);
+    });
+  }
+
+  function generarConstanciaPDF(id) {
+    // Opens PDF generated by Spring Boot backend
+    const pdfUrl = `${API_BASE}/aspirantes/${id}/constancia.pdf`;
+    // Close any open modal first
+    document.querySelectorAll('.modal.show').forEach(m => bootstrap.Modal.getInstance(m)?.hide());
+    setTimeout(() => {
+      document.getElementById('constanciaFrame').src = pdfUrl;
+      document.getElementById('btnDescargarConstancia').href = pdfUrl;
+      new bootstrap.Modal(document.getElementById('modalConstancia')).show();
+    }, 300);
+  }
+
+  // ---- Alta de Aspirante desde panel admin ----
+
+  function abrirModalNuevoAspirante() {
+    ['nuevoNombre','nuevoTelefono','nuevoEmail'].forEach(id => {
+      const el = document.getElementById(id);
+      el.value = '';
+      el.classList.remove('is-invalid','is-valid');
+    });
+    document.getElementById('nuevoEmailFeedback').textContent = 'Ingresa un correo válido.';
+    const sel = document.getElementById('nuevoCarrera');
+    sel.classList.remove('is-invalid','is-valid');
+    cargarCarrerasParaSelect(sel, null);
+    new bootstrap.Modal(document.getElementById('modalNuevoAspirante')).show();
+  }
+
+  function guardarNuevoAspirante() {
+    const nombre   = document.getElementById('nuevoNombre');
+    const telefono = document.getElementById('nuevoTelefono');
+    const email    = document.getElementById('nuevoEmail');
+    const carrera  = document.getElementById('nuevoCarrera');
+    let valido = true;
+
+    const nombreRegex = /^[A-Za-záéíóúÁÉÍÓÚñÑ\s]{3,}$/;
+    if (!nombreRegex.test(nombre.value.trim())) {
+      nombre.classList.add('is-invalid'); valido = false;
+    } else { nombre.classList.remove('is-invalid'); nombre.classList.add('is-valid'); }
+
+    if (!/^[0-9]{10}$/.test(telefono.value.trim())) {
+      telefono.classList.add('is-invalid'); valido = false;
+    } else { telefono.classList.remove('is-invalid'); telefono.classList.add('is-valid'); }
+
+    if (!/^\S+@\S+\.\S+$/.test(email.value.trim())) {
+      email.classList.add('is-invalid');
+      document.getElementById('nuevoEmailFeedback').textContent = 'Ingresa un correo electrónico válido.';
+      valido = false;
+    } else { email.classList.remove('is-invalid'); email.classList.add('is-valid'); }
+
+    if (!carrera.value) {
+      carrera.classList.add('is-invalid'); valido = false;
+    } else { carrera.classList.remove('is-invalid'); carrera.classList.add('is-valid'); }
+
+    if (!valido) return;
+
+    const datos = {
+      nombre:    nombre.value.trim(),
+      telefono:  telefono.value.trim(),
+      email:     email.value.trim(),
+      carreraId: parseInt(carrera.value)
+    };
+
+    const btn = document.getElementById('btnGuardarNuevoAspirante');
+    btn.disabled = true;
+    btn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span>Guardando...';
+
+    fetch(`${API_BASE}/aspirantes/registrar`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(datos)
+    })
+    .then(res => res.json())
+    .then(data => {
+      if (data.success) {
+        bootstrap.Modal.getInstance(document.getElementById('modalNuevoAspirante')).hide();
+        mostrarAlerta('success', 'Aspirante registrado correctamente.');
+        cargarAspirantes();
+      } else {
+        // Email duplicado u otro error del servidor
+        email.classList.add('is-invalid');
+        document.getElementById('nuevoEmailFeedback').textContent = data.mensaje || 'Error al registrar.';
+      }
+    })
+    .catch(() => {
+      // Demo mode
+      const nuevoId = demoAspirantes.length + 1;
+      const carreraNombre = (demoCarrerasSelect.find(c => c.id == datos.carreraId) || {}).nombre || '—';
+      demoAspirantes.push({ id: nuevoId, ...datos, carrera: carreraNombre,
+        carreraId: datos.carreraId, fecha: new Date().toISOString().slice(0,10) });
+      bootstrap.Modal.getInstance(document.getElementById('modalNuevoAspirante')).hide();
+      mostrarAlerta('success', '(Demo) Aspirante registrado correctamente.');
+      tablaAspirantes.clear().rows.add(demoAspirantes).draw();
+    })
+    .finally(() => {
+      btn.disabled = false;
+      btn.innerHTML = '<i class="bi bi-floppy me-1"></i>Registrar Aspirante';
+    });
+  }
+
+  // ---- Carreras para selects ----
+
+  function cargarCarrerasParaSelect(selectEl, selectedId) {
+    selectEl.innerHTML = '<option value="">Selecciona una carrera...</option>';
+    fetch(`${API_BASE}/carreras`)
+      .then(res => res.json())
+      .then(data => pintarOpcionesCarrera(selectEl, data, selectedId))
+      .catch(() => pintarOpcionesCarrera(selectEl, demoCarrerasSelect, selectedId));
+  }
+
+  function pintarOpcionesCarrera(selectEl, carreras, selectedId) {
+    carreras.forEach(c => {
+      const opt = document.createElement('option');
+      opt.value = c.id;
+      opt.textContent = c.nombre;
+      if (selectedId && c.id == selectedId) opt.selected = true;
+      selectEl.appendChild(opt);
+    });
+  }
+
+  function abrirModalEditarAspirante(id) {
+    fetch(`${API_BASE}/aspirantes/${id}`)
+      .then(res => res.json())
+      .then(a => poblarModalEditar({
+        id: a.id,
+        nombre: a.nombre,
+        telefono: a.telefono,
+        email: a.email,
+        carreraId: a.carrera ? a.carrera.id : ''
+      }))
+      .catch(() => {
+        const a = demoAspirantes.find(x => x.id === id);
+        if (a) poblarModalEditar(a);
+      });
+  }
+
+  function poblarModalEditar(a) {
+    document.getElementById('editAspiranteId').value = a.id;
+    document.getElementById('editNombre').value = a.nombre;
+    document.getElementById('editTelefono').value = a.telefono;
+    document.getElementById('editEmail').value = a.email;
+    document.querySelectorAll('#modalEditarAspirante .form-control, #modalEditarAspirante .form-select')
+      .forEach(el => el.classList.remove('is-invalid'));
+    cargarCarrerasParaSelect(document.getElementById('editCarrera'), a.carreraId);
+    new bootstrap.Modal(document.getElementById('modalEditarAspirante')).show();
+  }
+
+  function guardarAspiranteEdit() {
+    const id = document.getElementById('editAspiranteId').value;
+    const nombre = document.getElementById('editNombre');
+    const telefono = document.getElementById('editTelefono');
+    const email = document.getElementById('editEmail');
+    const carrera = document.getElementById('editCarrera');
+    let valido = true;
+
+    if (!nombre.value.trim()) { nombre.classList.add('is-invalid'); valido = false; }
+    else nombre.classList.remove('is-invalid');
+
+    if (!/^[0-9]{10}$/.test(telefono.value.trim())) { telefono.classList.add('is-invalid'); valido = false; }
+    else telefono.classList.remove('is-invalid');
+
+    if (!/^\S+@\S+\.\S+$/.test(email.value.trim())) { email.classList.add('is-invalid'); valido = false; }
+    else email.classList.remove('is-invalid');
+
+    if (!carrera.value) { carrera.classList.add('is-invalid'); valido = false; }
+    else carrera.classList.remove('is-invalid');
+
+    if (!valido) return;
+
+    const datos = {
+      nombre: nombre.value.trim(),
+      telefono: telefono.value.trim(),
+      email: email.value.trim(),
+      carreraId: parseInt(carrera.value)
+    };
+
+    const btn = document.getElementById('btnGuardarAspirante');
+    btn.disabled = true;
+
+    fetch(`${API_BASE}/aspirantes/${id}`, {
+      method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(datos)
+    })
+    .then(res => res.json())
+    .then(() => {
+      bootstrap.Modal.getInstance(document.getElementById('modalEditarAspirante')).hide();
+      mostrarAlerta('success', 'Aspirante actualizado correctamente.');
+      cargarAspirantes();
+    })
+    .catch(() => {
+      const idx = demoAspirantes.findIndex(x => x.id == id);
+      if (idx !== -1) {
+        const carreraNombre = (demoCarrerasSelect.find(c => c.id == datos.carreraId) || {}).nombre || demoAspirantes[idx].carrera;
+        demoAspirantes[idx] = { ...demoAspirantes[idx], ...datos, carrera: carreraNombre };
+      }
+      bootstrap.Modal.getInstance(document.getElementById('modalEditarAspirante')).hide();
+      mostrarAlerta('success', '(Demo) Aspirante actualizado correctamente.');
+      tablaAspirantes.clear().rows.add(demoAspirantes).draw();
+    })
+    .finally(() => { btn.disabled = false; });
+  }
+
+  function abrirModalEliminarAspirante(id, nombre) {
+    aspiranteParaEliminar = id;
+    document.getElementById('nombreAspiranteEliminar').textContent = nombre;
+    new bootstrap.Modal(document.getElementById('modalEliminarAspirante')).show();
+  }
+
+  function confirmarEliminarAspirante() {
+    const btn = document.getElementById('btnConfirmarEliminarAspirante');
+    btn.disabled = true;
+
+    fetch(`${API_BASE}/aspirantes/${aspiranteParaEliminar}`, { method: 'DELETE' })
+      .then(res => res.json())
+      .then(() => {
+        bootstrap.Modal.getInstance(document.getElementById('modalEliminarAspirante')).hide();
+        mostrarAlerta('success', 'Aspirante eliminado correctamente.');
+        cargarAspirantes();
+      })
+      .catch(() => {
+        const idx = demoAspirantes.findIndex(x => x.id === aspiranteParaEliminar);
+        if (idx !== -1) demoAspirantes.splice(idx, 1);
+        bootstrap.Modal.getInstance(document.getElementById('modalEliminarAspirante')).hide();
+        mostrarAlerta('warning', '(Demo) Aspirante eliminado del listado.');
+        tablaAspirantes.clear().rows.add(demoAspirantes).draw();
+      })
+      .finally(() => { btn.disabled = false; aspiranteParaEliminar = null; });
+  }
+
+  function mostrarAlerta(tipo, msg) {
+    const el = document.getElementById('alertMsg');
+    el.className = `alert alert-${tipo}`;
+    el.innerHTML = `<i class="bi bi-${tipo==='success'?'check-circle':'exclamation-triangle'}-fill me-2"></i>${msg}`;
+    el.classList.remove('d-none');
+    setTimeout(() => el.classList.add('d-none'), 5000);
+  }
+</script>
+</body>
+</html>
